@@ -6,13 +6,15 @@ Tarea 1. Algoritmos de gran escala
 
 **Andrés Villaseñor, Carlos González, Felipe Gerard**
 
-# 0. Setup
+0. Setup
+---------------
 
 Dado que los tres integrantes del equipo tenemos Macs y que manejar los puertos de máquinas simuladas en Docker no es sencillo, optamos por utilizar máquinas de Amazon. Generamos tres instancias t2.micro, de las cuales una es el master y dos son esclavas. Configuramos esas máquinas y en ellas hicimos los ejercicios. Cabe mencionar que no son multicore, por lo que no hay ganancias si usamos varios procesos en una máquina. 
 
 Utilizamos host0 como el master y host1 y host2 como esclavas. Por alguna razón no nos funcionó usar -hostfile, así que optamos por dar la lista de las máquinas a utilizar. Tendremos que investigar por qué no funcionó.
 
-# 1. Hello world
+1. Hello world
+------------------
 
 Diversos ejercicios par ver que funcionara el cluster.
 
@@ -66,7 +68,8 @@ mpi_user@ip-172-31-37-235:~/carpetaNFS/hello_world$ /opt/openmpi-1.8.4/bin/mpiru
 0.000 tid=2 : hello MPI user: machine=ip-172-31-37-234 [NCPU=8]
 ```
 
-# 2. Aproximación de serie $\sum_{n=1}^\infty \frac{1}{n^k}$
+2. Aproximación de serie
+-----------------------------------------------------------
 
 ### Versión sin OMPI (hasta 1,000,000)
 
