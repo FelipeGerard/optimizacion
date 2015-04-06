@@ -6,6 +6,8 @@ Tarea 1. Algoritmos de gran escala
 
 **Andrés Villaseñor, Carlos González, Felipe Gerard**
 
+**Más información, este documento con mejor formato y códigos en [GitHub](https://github.com/felipegerard/algoritmos-de-gran-escala/tree/master/tarea1 "Tarea 1")**
+
 0. Setup
 ---------------
 
