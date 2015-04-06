@@ -1,9 +1,10 @@
-------
-title: "Tarea 1. Algoritmos de gran escala"
-date: 6 de abril de 2015
-author: Andrés Villaseñor, Carlos González, Felipe Gerard
-output: html_document
-------
+
+Tarea 1. Algoritmos de gran escala
+===================================
+
+**6 de abril de 2015**
+
+**Andrés Villaseñor, Carlos González, Felipe Gerard**
 
 # 0. Setup
 
