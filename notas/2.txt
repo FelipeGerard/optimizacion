@@ -1,0 +1,454 @@
+INTRO SUPER RÁPIDA A MPI:
+
+-) Un sólo código que corre en todos los nodos.
+
+-) En el código hay que indicar qué nodo realiza qué trabajo.
+
+-) Todos los nodos se les asigna un id (entero de 0 a núm de nodos-1).
+
+-) Es posible asignar diferentes trabajos a diferentes nodos usando este id.
+
+-) El ambiente en el que se trabaja es de memoria distribuida por lo que cada nodo puede guardar
+
+un mismo o diferente tipo de datos y si es necesario, el programador indica a los nodos los datos
+
+que se transfieren entre ellos.
+
+-) Compiladores:
+
+	--> mpicc para lenguaje C
+
+-)Ejecución:
+
+	--> mpirun -np [#1] -machinefile [#2] [nombre de ejecutable]
+
+		#1: número de nodos a usar. Si se coloca un número más grande que los 
+			nodos disponibles entonces algunos nodos son utilizados dos veces
+			(ejecutar dos veces el mismo programa de forma separada)
+
+		#2: la opción machinefile especifica los nodos que se quieren usar. #2 es el nombre
+			de un archivo que contiene la lista de nombres de nodos.
+
+	--> Al inicio de cada código escribir: #include <mpi.h>
+		para variables, procedimientos relacionados con la librería MPI
+
+-)Algunos comandos (ver 1.txt de la clase anterior para otros comandos, procedimientos, variables)
+
+
+COMUNICACIÓN ENTRE NODOS
+
+MPI_SEND, MPI_RECV
+
+-) Para envío/recibimiento de datos.
+
+-) Ninguno de estos comandos termina hasta que el destino recibe los datos (blocking operation) 
+	se checa automáticamente si fueron o no recibidos los datos.
+
+-) Sintaxis:
+
+MPI_Send(
+    void* data,
+    int count,
+    MPI_Datatype datatype,
+    int destination,
+    int tag,
+    MPI_Comm communicator)
+
+MPI_Recv(
+    void* data,
+    int count,
+    MPI_Datatype datatype,
+    int source,
+    int tag,
+    MPI_Comm communicator,
+    MPI_Status* status)
+
+
+
+data: pensarlo como el "sobre" que empaca los datos del procesador A que quiere enviar 
+	al procesador B. En las referencias le llaman "buffer".
+
+count: cantidad de datos. En el envío count representa la cantidad exacta. En el recibimiento
+	count representa la cantidad máxima de datos que B puede recibir.
+
+MPI_Datatype:
+
+destination: id del procesador destino.
+
+tag: entero para identificar el mensaje pues A puede mandar más de un mensaje a B.
+	MPI_ANY_TAG constante que es posible usar como tag.
+
+MPI_Comm: Comunicador que define el grupo de nodos que se usan. Por default: MPI_COMM_WORLD
+
+MPI_Status: provee info. del mensaje. La constante MPI_STATUS_IGNORE usaremos en ejemplos.
+
+
+
+----------------------------------------------------------------------------------------
+
+
+COMUNICACION COLECTIVA
+
+MPI_BARRIER(
+MPI_Comm communicator)
+
+-) Para sincronizar.
+
+-) Cuando todos los procesos llegan al barrier continúa la ejecución del código.
+
+
+MPI_BCAST
+
+-) Envío de mismos datos a diferentes procesos en un comunicador.
+
+-)Sintaxis:
+
+
+MPI_Bcast(
+    void* data,
+    int count,
+    MPI_Datatype datatype,
+    int root,
+    MPI_Comm communicator)
+
+
+	--> El nodo que envía (root) y los nodos que reciben realizan diferentes trabajos pero 
+		llaman a la misma función "Bcast"
+
+
+
+MPI_SCATTER
+
+-) La diferencia con Bcast es que se envían chunks de un array a diferentes procesos y Bcast 
+	envía el mismo set de datos
+
+-) Distribuye los elementos en el orden de los id's
+
+-)Sintaxis:
+
+MPI_Scatter(
+    void* send_data,
+    int send_count,
+    MPI_Datatype send_datatype,
+    void* recv_data,
+    int recv_count,
+    MPI_Datatype recv_datatype,
+    int root,
+    MPI_Comm communicator)
+
+send_data: array de datos que están en root
+
+send_count: cantidad de datos a enviar por procesador
+
+recv_data: buffer de datos que puede tener recv_count elementos del tipo recv_datatype
+
+MPI_GATHER (investigar)
+
+MPI_REDUCE (tarea pasada)
+
+
+MPI_ABORT
+
+-) Para matar el código que se ejecuta en los nodos del comunicador
+
+
+
+----------------------------------------------------------------------------------------
+
+BLAS
+
+-) Basic Linear Algebra Subprograms contiene rutinas para realizar operaciones vectoriales, matriciales de manera eficiente
+
+	El nivel 1 realiza operaciones escalares, vectoriales y vector-vector
+	El nivel 2 realiza operaciones del tipo matriz-vector
+	El nivel 3 realiza operaciones del tipo matriz-matriz
+
+
+INVESTIGAR SOBRE LAPACK (FUNCIÓN DGEMM)
+
+	LAPACK usa BLAS......
+
+
+EJEMPLOS (OUTPUTS)
+
+COMUNICACION MPI
+
+-)SEND/RECEIVE
+
+--> ej1.c
+
+a) $: mpirun -n 2 -H localhost ej1.o
+
+Process 1 received number -1 from process 0
+machine:erickmac-MacBookPro
+
+
+b) $:  mpirun -np 2 -machinefile hostnames -path /home/mpi_user/pruebasmpi/tutorialompi/MessagesMPI/1 ej1.o
+
+Process 1 received number -1 from process 0
+machine:erick-VirtualBox
+
+$:cat hostnames
+
+erick-VirtualBox
+
+--> pingpong.c
+
+a) $: mpirun -n 2 -H localhost pingpong.o
+
+0 sent to 1 ping_pong_count 1
+1 received from 0 ping_pong_count 1
+0 received from 1 ping_pong_count 2
+1 sent to 0 ping_pong_count 2
+0 sent to 1 ping_pong_count 3
+1 received from 0 ping_pong_count 3
+0 received from 1 ping_pong_count 4
+1 sent to 0 ping_pong_count 4
+0 sent to 1 ping_pong_count 5
+1 received from 0 ping_pong_count 5
+0 received from 1 ping_pong_count 6
+1 sent to 0 ping_pong_count 6
+0 sent to 1 ping_pong_count 7
+1 received from 0 ping_pong_count 7
+0 received from 1 ping_pong_count 8
+1 sent to 0 ping_pong_count 8
+0 sent to 1 ping_pong_count 9
+1 received from 0 ping_pong_count 9
+0 received from 1 ping_pong_count 10
+1 sent to 0 ping_pong_count 10
+
+b)  
+$: cat hostnames
+erick-VirtualBox
+localhost
+
+$: mpirun -n 2 -machinefile hostnames -path /home/mpi_user/pruebasmpi/tutorialompi/MessagesMPI/1 pingpong2.o
+
+erickmac-MacBookPro received from 0 ping_pong_count 1
+erick-VirtualBox sent to 1 ping_pong_count 1
+erickmac-MacBookPro sent to 0 ping_pong_count 2
+erick-VirtualBox received from 1 ping_pong_count 2
+erickmac-MacBookPro received from 0 ping_pong_count 3
+erick-VirtualBox sent to 1 ping_pong_count 3
+erickmac-MacBookPro sent to 0 ping_pong_count 4
+erick-VirtualBox received from 1 ping_pong_count 4
+erickmac-MacBookPro received from 0 ping_pong_count 5
+erick-VirtualBox sent to 1 ping_pong_count 5
+erickmac-MacBookPro sent to 0 ping_pong_count 6
+erick-VirtualBox received from 1 ping_pong_count 6
+erickmac-MacBookPro received from 0 ping_pong_count 7
+erick-VirtualBox sent to 1 ping_pong_count 7
+erickmac-MacBookPro sent to 0 ping_pong_count 8
+erick-VirtualBox received from 1 ping_pong_count 8
+erickmac-MacBookPro received from 0 ping_pong_count 9
+erick-VirtualBox sent to 1 ping_pong_count 9
+erickmac-MacBookPro sent to 0 ping_pong_count 10
+erick-VirtualBox received from 1 ping_pong_count 10
+
+
+-)BROADCAST
+
+a) 
+$: mpirun -n 4 -H localhost bcast.o 1 10
+
+Data size=8.000000
+Avg time:0.000004
+Machine:erickmac-MacBookPro
+Data size=8.000000
+Avg time:0.000006
+Machine:erickmac-MacBookPro
+Data size=8.000000
+Avg time:0.000005
+Machine:erickmac-MacBookPro
+
+
+b)
+
+$:cat hostnames
+localhost
+erick-VirtualBox
+
+$: mpirun -n 6 -map-by core -machinefile hostnames -path /home/mpi_user/pruebasmpi/tutorialompi/MessagesMPI/2 bcast.o 1 10
+
+Data size=8.000000
+Avg time:0.039076
+Machine:erickmac-MacBookPro
+Data size=8.000000
+Avg time:0.065275
+Machine:erickmac-MacBookPro
+Data size=8.000000
+Avg time:0.065470
+Machine:erickmac-MacBookPro
+Data size=8.000000
+Avg time:0.066752
+Machine:erickmac-MacBookPro
+Data size=8.000000
+Avg time:0.052583
+Machine:erick-VirtualBox
+
+
+MULTIPLICACION DE MATRICES EN C
+
+-)1 EJ
+
+Compilar:
+
+$: gcc MM.c -o MM.exe
+
+Ejecutar:
+
+$: ./MM.exe
+
+
+mat[0][0]=2	mat[0][1]=2	mat[0][2]=2
+mat[1][0]=2	mat[1][1]=2	mat[1][2]=2
+mat[2][0]=2	mat[2][1]=2	mat[2][2]=2
+
+mat[0][0]=-5	mat[0][1]=-5	mat[0][2]=-5
+mat[1][0]=-5	mat[1][1]=-5	mat[1][2]=-5
+mat[2][0]=-5	mat[2][1]=-5	mat[2][2]=-5
+
+mat[0][0]=-30	mat[0][1]=-30	mat[0][2]=-30
+mat[1][0]=-30	mat[1][1]=-30	mat[1][2]=-30
+mat[2][0]=-30	mat[2][1]=-30	mat[2][2]=-30
+
+
+-)2 EJ
+
+$:./MM2.exe
+
+
+mat[0][0]=3.000000	mat[0][1]=1.000000	mat[0][2]=2.000000
+mat[1][0]=0.000000	mat[1][1]=3.000000	mat[1][2]=0.000000
+mat[2][0]=1.000000	mat[2][1]=2.000000	mat[2][2]=4.000000
+
+mat[0][0]=1.000000	mat[0][1]=2.000000	mat[0][2]=2.000000
+mat[1][0]=0.000000	mat[1][1]=4.000000	mat[1][2]=3.000000
+mat[2][0]=1.000000	mat[2][1]=0.000000	mat[2][2]=1.000000
+
+mat[0][0]=5.000000	mat[0][1]=10.000000	mat[0][2]=11.000000
+mat[1][0]=0.000000	mat[1][1]=12.000000	mat[1][2]=9.000000
+mat[2][0]=5.000000	mat[2][1]=10.000000	mat[2][2]=12.000000
+
+-)3 EJ
+
+$:./MM3.exe
+
+mat[0]=3.000000	mat[1]=1.000000	mat[2]=2.000000	
+mat[3]=0.000000	mat[4]=3.000000	mat[5]=0.000000	
+mat[6]=1.000000	mat[7]=2.000000	mat[8]=4.000000	
+
+mat[0]=1.000000	mat[1]=2.000000	mat[2]=2.000000	
+mat[3]=0.000000	mat[4]=4.000000	mat[5]=3.000000	
+mat[6]=1.000000	mat[7]=0.000000	mat[8]=1.000000	
+
+mat[0]=5.000000	mat[1]=10.000000 mat[2]=11.000000	
+mat[3]=0.000000	mat[4]=12.000000 mat[5]=9.000000	
+mat[6]=5.000000	mat[7]=10.000000 mat[8]=12.000000	
+
+
+
+-)3 EJ DGEMM
+
+Instalar en cada nodo: blas
+
+sudo apt-get install libblas-dev
+
+Compilar:
+$:gcc MMdgemm.c -o MMdgemm.exe -lblas
+
+Ejecutar:
+
+$./MMdgemm.exe
+
+mat[0]=3.000000	mat[1]=1.000000	mat[2]=2.000000	
+mat[3]=0.000000	mat[4]=3.000000	mat[5]=0.000000	
+mat[6]=1.000000	mat[7]=2.000000	mat[8]=4.000000	
+
+mat[0]=1.000000	mat[1]=2.000000	mat[2]=2.000000	
+mat[3]=0.000000	mat[4]=4.000000	mat[5]=3.000000	
+mat[6]=1.000000	mat[7]=0.000000	mat[8]=1.000000	
+
+mat[0]=5.000000	mat[1]=10.000000	mat[2]=11.000000	
+mat[3]=0.000000	mat[4]=12.000000	mat[5]=9.000000	
+mat[6]=5.000000	mat[7]=10.000000	mat[8]=12.000000	
+
+mat[0]=5.000000	mat[1]=10.000000	mat[2]=11.000000	
+mat[3]=0.000000	mat[4]=12.000000	mat[5]=9.000000	
+mat[6]=5.000000	mat[7]=10.000000	mat[8]=12.000000
+
+USANDO MPI-DGEMM
+
+-)MM-MPI
+
+a) 
+Compilar:
+$: mpicc MM-mpi.c -o MM-mpi.o -llapack -lblas -lgfortran
+
+Ejecutar:
+$: mpirun -n 3 -H localhost MM-mpi.o 6 6 6
+
+mat[0]=3.00000	mat[1]=1.00000	mat[2]=0.00000	mat[3]=1.00000	mat[4]=2.00000	mat[5]=1.00000	
+mat[6]=1.00000	mat[7]=3.00000	mat[8]=2.00000	mat[9]=4.00000	mat[10]=2.00000	mat[11]=0.00000	
+mat[12]=2.00000	mat[13]=3.00000	mat[14]=2.00000	mat[15]=0.00000	mat[16]=4.00000	mat[17]=2.00000	
+mat[18]=2.00000	mat[19]=3.00000	mat[20]=4.00000	mat[21]=2.00000	mat[22]=3.00000	mat[23]=1.00000	
+mat[24]=1.00000	mat[25]=2.00000	mat[26]=4.00000	mat[27]=3.00000	mat[28]=1.00000	mat[29]=4.00000	
+mat[30]=4.00000	mat[31]=2.00000	mat[32]=3.00000	mat[33]=4.00000	mat[34]=0.00000	mat[35]=0.00000	
+
+mat[0]=3.00000	mat[1]=1.00000	mat[2]=1.00000	mat[3]=0.00000	mat[4]=1.00000	mat[5]=3.00000	
+mat[6]=2.00000	mat[7]=0.00000	mat[8]=1.00000	mat[9]=1.00000	mat[10]=0.00000	mat[11]=0.00000	
+mat[12]=4.00000	mat[13]=2.00000	mat[14]=1.00000	mat[15]=0.00000	mat[16]=1.00000	mat[17]=4.00000	
+mat[18]=3.00000	mat[19]=2.00000	mat[20]=4.00000	mat[21]=0.00000	mat[22]=2.00000	mat[23]=0.00000	
+mat[24]=4.00000	mat[25]=2.00000	mat[26]=4.00000	mat[27]=4.00000	mat[28]=3.00000	mat[29]=0.00000	
+mat[30]=2.00000	mat[31]=3.00000	mat[32]=1.00000	mat[33]=3.00000	mat[34]=3.00000	mat[35]=4.00000	
+
+mat[0]=3.00000	mat[1]=1.00000	
+mat[2]=1.00000	mat[3]=3.00000	
+
+mat[0]=3.00000	mat[1]=1.00000	mat[2]=1.00000	mat[3]=0.00000	mat[4]=1.00000	mat[5]=3.00000	
+mat[6]=2.00000	mat[7]=0.00000	mat[8]=1.00000	mat[9]=1.00000	mat[10]=0.00000	mat[11]=0.00000	
+
+mat[0]=2.00000	mat[1]=1.00000	
+mat[2]=2.00000	mat[3]=0.00000	
+
+mat[0]=4.00000	mat[1]=2.00000	mat[2]=4.00000	mat[3]=4.00000	mat[4]=3.00000	mat[5]=0.00000	
+mat[6]=2.00000	mat[7]=3.00000	mat[8]=1.00000	mat[9]=3.00000	mat[10]=3.00000	mat[11]=4.00000	
+
+mat[0]=0.00000	mat[1]=1.00000	
+mat[2]=2.00000	mat[3]=4.00000	
+
+mat[0]=4.00000	mat[1]=2.00000	mat[2]=1.00000	mat[3]=0.00000	mat[4]=1.00000	mat[5]=4.00000	
+mat[6]=3.00000	mat[7]=2.00000	mat[8]=4.00000	mat[9]=0.00000	mat[10]=2.00000	mat[11]=0.00000	
+
+
+
+
+
+TAREA:
+
+-)AÑADIR A MM-MPI.C LA SUMA DE MATRICES Y EL COMANDO MPI_GATHER PARA TENER COMPLETA LA 
+MULTIPLICACIÓN DE MATRICES DISTRIBUIDA Y EL RESULTADO DE ESTA MULTIPLICACIÓN EN EL NODO 0.
+
+PROBAR EL CÓDIGO CON VARIOS EJEMPLOS DE MATRICES.
+
+-)OUTPUTS EN TAREA2/NOMBRE_EQUIPO
+
+-)CUANDO? LUNES DE LA PROX. SEMANA.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,319 @@
+INTRODUCCION
+
+
+SISTEMAS DISTRIBUIDOS
+
+
+-)El cómputo distribuido es una tecnología clave en la solución de problemas en los que se requiere
+ 
+una cantidad demandante de recursos (memoria, espacio). 
+
+
+-)Al hablar de cómputo distribuido nos referimos a computadoras conectadas (por alguna vía) que resuelven 
+
+un trabajo o tarea en distintas localizaciones. Cómputo en paralelo además de referirse a lo anterior, involucra
+
+computadoras con más de un procesador o núcleos (cores).
+
+
+-)Hoy en día se obtiene esta tecnología de forma sencilla: laptops con múltiples procesadores o núcleos, construcción 
+
+de clústers caseros
+
+
+-)En sistemas distribuidos una tarea compleja se procesa por computadoras simultáneamente. 
+
+Se divide una tarea entre trabajadores que realizan de forma independiente procesos que ayudan a resolverla.
+
+Estos procesos realizados por cada trabajador pueden ser iguales o diferentes (p.ej. SIMD "single instruction multiple data", MIMD
+ "multiple instruction multiple data"---taxonomía de Flynn)
+
+
+-)En sistemas distribuidos además de las memorias locales de cada computadora es posible tener una memoria remota a la que 
+
+cada procesador tiene acceso.
+
+
+
+EL CURSO:
+
+
+-)En el curso estamos interesados en estudiar algoritmos que utilizan la tecnología anterior. 
+
+
+
+ALGORITMOS EN PARALELO
+
+
+-)A los algoritmos que permanecen eficientes al ejecutarse en problemas cada vez más grandes les llamamos escalables.
+
+("eficiencia: hacer más con menos", en nuestro caso menos tiempo de ejecución, menos recursos computacionales p.ej. almacenamiento y memoria)
+
+
+-)Para el punto anterior, además de considerar el tiempo de ejecución de un algoritmo (prorporcional al número de operaciones
+en punto flotante) se debe considerar:
+
+
+	+) Transferencia de datos entre memoria y procesadores:
+		
+		--> Comunicación overhead: tiempo requerido de comunicación hacia/entre trabajadores. Involucra diferentes conceptos
+	 		como latencia (start up time del trabajo), bandwidth (tasa de transferencia entre datos por unidad de tiempo)
+
+		--> Sincronización: dos o más procesadores realizan el trabajo en un tiempo establecido.
+
+
+	+) Ejecución y partición de los datos enviado a los trabajadores (load balancing: que no estén durmiendo los trabajadores 
+			mientras otros están trabajando y cantidades de trabajo proporcionales entre los trabajadores)
+	
+
+-)En los algoritmos ejecutados en paralelo se consideran tradeoffs:
+
+
+	+) Tiempo vs espacio (común a todos los algoritmos, no sólo a los que se ejecutan en paralelo)
+
+
+
+	+) Load balancing vs comunicación (incremento operaciones en paralelo a expensas de comunicación?)
+
+
+
+	+) Paralelismo vs estabilidad numérica (tipos de algoritmos altamente paralelizables son menos estables numéricamente)
+
+
+
+
+EJEMPLOS DE ALGORITMOS QUE SE EJECUTAN EN PARALELO:
+
+-)Multiplicación de matrices.
+
+-)Factorización de matrices (p.ej. descomposición en valores singulares).
+
+-)Problemas de eigenvalores.
+
+-)Solución de ecuaciones lineales.
+
+-)Problemas de mínimos cuadrados.
+
+-)Puntos interiores.
+
+
+ 
+MPI
+
+-)Message Passing Interface es una librería estándar para ejecutar múltiples procesos en paralelo a través de mensajes.
+
+-)Es posible ejecutar los procesos en un mismo sistema (sistema con múltiples núcleos) o en un sistema distribuido.
+
+-)Los mensajes permiten el manejo y distribución de datos.
+
+-)OMPI es una implementación open source de MPI.
+
+-)OpenMP es otra librería que permite ejecutar procesos en un mismo sistema operativo:
+
+	--> Una diferencia con OMPI es que en OpenMP la memoria es compartida, mientras que en OMPI para un sistema 
+	distribuido, cada computadora posee su propio espacio de memoria y puede modificar sus variables locales.
+
+	--> Otra diferencia es que en OpenMP una región del código se ejecuta en paralelo y en OMPI todo el código se ejecuta en paralelo
+
+
+-)El programador explícitamente escribe comandos para realizar la tarea en paralelo. Tú decides qué y cuándo mover los datos, cómo dividir la cantidad de memoria entre tus procesos.
+
+-)Lenguajes para utilizar OMPI: C o Fortran
+
+
+-)Algunas funciones, comandos, tipos:
+
+MPI_Init  /*instanciar los procesos MPI en cada procesador/nodo, típicamente usado para pasar los argumentos que fueron recibidos de la línea de comandos*/
+
+MPI_Comm_rank /*obtener el id del proceso. Para el procesador maestro el rank o tid es 0*/
+
+MPI_Comm_size /*obtener el número de procesos lanzados por MPI*/
+
+MPI_Get_processor_name
+
+MPI_Send, MPI_Recv
+
+MPI_finalize 
+
+MPI_CHAR, MPI_INT, MPI_DOUBLE
+
+-)MPI construye "comunicadores". MPI_COMM_WORLD es el de default construido por MPI_Init y representa los procesos disponibles que puedo utilizar.
+
+INSTALACIÓN
+
+-) Ver documentillo escrito
+
+EJEMPLOS (OUTPUTS)
+
+Número de cores en máquina master:
+
+$: cat /proc/cpuinfo | grep processor | wc -l
+
+8
+
+Número de cores en esclavo:
+
+$: cat /proc/cpuinfo | grep processor | wc -l
+
+1
+
+-)HELLO_WORLD
+
+a) $: mpirun -H localhost hello-mpi.exe
+
+hello MPI user: from process = 0 on machine=erickmac-MacBookPro, of NCPU=1 processes
+
+b) $: mpirun -np 8 -H localhost hello-mpi.exe
+
+
+hello MPI user: from process = 0 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 2 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 3 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 4 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 5 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 6 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 7 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 1 on machine=erickmac-MacBookPro, of NCPU=8 processes
+
+
+c) $: mpirun -np 8 -map-by core -hostfile hostnames -path /home/mpi_user/pruebasmpi/tutorialompi/hello_world hello-mpi.exe
+
+
+hello MPI user: from process = 1 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 5 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 0 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 3 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 4 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 2 on machine=erickmac-MacBookPro, of NCPU=8 processes
+hello MPI user: from process = 7 on machine=erick-VirtualBox, of NCPU=8 processes
+hello MPI user: from process = 6 on machine=erick-VirtualBox, of NCPU=8 processes
+
+
+-)RZF
+
+a) $: ./rzf.exe 2 1000000000
+
+archivo:./rzf.exe
+exponente:2
+exponente:2
+limite:1000000000
+
+9.869604
+
+b)$: time ./rzf.exe 2 1000000000
+
+archivo:./rzf.exe
+exponente:2
+exponente:2
+limite:1000000000
+
+9.869604
+
+real	0m10.513s
+user	0m10.470s
+sys	0m0.004s 
+
+*)Para ver qué quiere decir el output del comando time:
+
+$: man 7 time
+
+	Real time is defined as time measured from some fixed point (e.g., the start) in the life of a process (elapsed time).
+
+	User CPU time is the time spent executing code in user mode. 
+
+	System CPU time is the time spent by the kernel executing in system mode on behalf of the process (e.g., executing system calls).
+
+
+c)$: time mpirun -H localhost rzfp.exe 2 1000000
+
+1.644934
+suma:9.869604
+
+real	0m10.521s
+user	0m10.250s
+sys	0m0.117s
+
+
+d)$: time mpirun -np 4 -H localhost rzfp.exe 2 1000000
+
+0.000000
+0.000000
+1.644934
+0.000000
+suma:9.869604
+
+real	0m3.037s
+user	0m8.352s
+sys	0m0.431s
+
+
+e)$: time mpirun -np 8 -H localhost rzfp.exe 2 1000000000
+
+0.000000
+0.000000
+inf
+0.000000
+0.000000
+0.000000
+1.644934
+0.000000
+suma:inf
+
+real	0m2.603s
+user	0m12.934s
+sys	0m4.462s
+
+
+*) Por qué da inf? cómo arreglar?
+
+
+*) Si el número de procesos "-np" es mayor que el número de "hosts" entonces mpirun realiza un loop al primer host 
+en el archivo "hostnames" y así hasta tener asignados todos los procesos.
+
+
+f) $: time mpirun -np 1 -map-by core -hostfile hostnames -path /home/mpi_user/pruebasmpi/tutorialompi/rzfun rzfp.exe 2 1000000000
+
+1.644934
+suma:9.869604
+
+real	0m14.939s
+user	0m10.321s
+sys	0m0.147s
+
+
+g) $: time mpirun -np 4 -map-by core -hostfile hostnames -path /home/mpi_user/pruebasmpi/tutorialompi/rzfun rzfp.exe 2 1000000000
+
+0.000000
+0.000000
+0.000000
+1.644934
+suma:9.869604
+
+real	0m7.350s
+user	0m8.358s
+sys	0m0.473s
+
+
+h) $:time mpirun -np 5 -map-by core -hostfile hostnames -path /home/mpi_user/pruebasmpi/tutorialompi/rzfun rzfp.exe 2 1000000000
+
+0.000000
+0.000000
+1.644934
+0.000000
+suma:inf
+inf
+
+real	0m29.719s
+user	0m22.049s
+sys	0m10.266s
+
+
+
+
+-)TAREA: EJECUTAR EJEMPLOS DE OMPI EN CLUSTER(MIN 2 Y MAX 3 COMPUTADORAS) Y USAR EL COMANDO MPI_REDUCE PARA RZF
+
+
+	DONDE? CREAR CARPETA CON NOMBRE DE CLUSTER/EQUIPO DENTRO DE "ENTREGATAREAS" EN DROP CON OUTPUTS DE EJECUCIONES 
+
+
+	CUANDO? LUNES REGRESANDO DE SEMANA SANTA
