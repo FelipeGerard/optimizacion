@@ -1,0 +1,77 @@
+<h1 id="clases-2-y-3">Clases 2 y 3</h1>
+<h2 id="multiplicación-de-matrices">Multiplicación de matrices</h2>
+<ul>
+<li>Para &quot;3) EJ DGEMM&quot;, instalar también por si acaso: ~ gfortran ~ liblapack-dev (LAPACK)</li>
+</ul>
+<h2 id="tarea">Tarea</h2>
+<ul>
+<li>Leer basic C</li>
+<li>Checar cómo usar una sola instalación</li>
+<li>Investigar gather</li>
+<li>Investigar DGEMM (dgemm_(...))</li>
+<li>Comparar resultados de nuestra multiplicación de matrices vs DGEMM de LAPACK</li>
+<li>Terminar código para multiplicar matrices en paralelo usando MPI + DGEMM</li>
+</ul>
+<h2 id="svd">SVD</h2>
+<p>Si <span class="math">\(A \in \mathbb{C}^{mxn}\)</span> entonces: <span class="math">\[
+    A = U \Sigma V^H,
+\]</span> con <span class="math">\(U\)</span> de mxm, <span class="math">\(V\)</span> de nxn matrices unitarias y <span class="math">\(\Sigma\)</span> diagonal de mxn. Aquí <span class="math">\(M^H\)</span> denota la transpuesta conjugada de M; si M tiene entradas reales entonces <span class="math">\(M^H = M^T\)</span>. Como <span class="math">\(a^H = V \Sigma^T U^H\)</span>, asumimos s.p.g. que <span class="math">\(m \geq n\)</span> y que <span class="math">\(r = rango(A) \leq n = min(m,n)\)</span>. Denotamos <span class="math">\(u_j\)</span>, <span class="math">\(v_j\)</span> las columnas de <span class="math">\(U\)</span> (vectores singulares izquierdos de <span class="math">\(A\)</span>) y de <span class="math">\(V\)</span> (vectores singulares derechos de <span class="math">\(A\)</span>) respectivamente y <span class="math">\(\sigma_i, i = 1, ..., n\)</span> los valores singulares de A (reales y no negativos). Tílas entradas de <span class="math">\(\Sigma\)</span> y las columnas de <span class="math">\(U\)</span> y de <span class="math">\(V\)</span> se ordenan de acuerdo a <span class="math">\(\sigma_1 \geq ... \geq \sigma_r &gt; 0\)</span>, con <span class="math">\(\sigma_{r+1} = ... = \sigma_n = 0\)</span>.</p>
+<h3 id="algoritmo-de-jacobi">Algoritmo de Jacobi</h3>
+<p>El algoritmo de Jacobi aplica al caso de matrices reales y se extienden también al caso complejo. Trabajaremos con matrices reales. Bajo este supuesto, las matrices <span class="math">\(U\)</span> y <span class="math">\(V\)</span> son reales también (y por lo tanto ortogonales). Si A es simétrica se pueden ajustar los signos de las entradas de <span class="math">\(\Sigma\)</span> de modo que <span class="math">\(U = V\)</span> y <span class="math">\(A = U^T D U\)</span> corresponde con la descomposición espectral.</p>
+<p>Hay dos tipos de métodos basados en Jacobi: one-sided y two-sided.</p>
+<p><strong>Método de Jacobi: one-sided (MJOS)</strong></p>
+<p>Idea: Construimos una matriz <span class="math">\(V\)</span> ortogonal tal que <span class="math">\(AV = W\)</span> tenga columnas ortogonales. Normalizando las columnas de <span class="math">\(W\)</span> distintas de cero (norma euclidiana), tenemos que</p>
+<p><span class="math">\[
+    W = \left(U_r 0\right) \left(\begin{array}{cc} \Sigma_r &amp; 0 \\ 0 &amp; 0 \end{array} \right),
+\]</span></p>
+<p>con <span class="math">\(U_r\)</span> de mxr las columnas ortonormales distintas de cero y <span class="math">\(\Sigma_r = diag(\sigma_1, ..., sigma_r)\)</span> las normas de dichas columnas. Una SVD para A está dada por</p>
+<p><span class="math">\[
+    A = U_r \Sigma_r V_r^T,
+\]</span> donde <span class="math">\(V_r\)</span> de nxr tiene r columnas de V, que es de nxn.</p>
+<p><em>Algoritmo:</em></p>
+<p><span class="math">\(a^0 = A\)</span><br /><span class="math">\(V^0 = I_n\)</span></p>
+<p>for <span class="math">\(k &gt; 0\)</span>:</p>
+<ul>
+<li><span class="math">\(A^{k+1} = A^k U^k\)</span></li>
+<li><span class="math">\(V^{k+1} = V^k U^k\)</span>, donde <span class="math">\(U^k\)</span> son matrices de rotación del plano para una <span class="math">\((i,j)\)</span> predefinida para cada <span class="math">\(k\)</span>, es decir, una matriz identidad pero con elementos:
+<ul>
+<li><span class="math">\(U^k_{i,i} = U^k_{j,j} = cos(\theta), U^k_{i,j} = sen(\theta), U^k_{j,i} = -sen(\theta), i &lt; j\)</span></li>
+<li>La multiplicación de <span class="math">\(a^k U^k\)</span> sólo afecta a 2 columnas de <span class="math">\(a^k\)</span>: <span class="math">\((a^{k+1}_i, a^{k+1}_j) = (a^k_i, a^k_j) \left(\begin{array}{cc} cos(\theta) &amp; sen(\theta) \\ -sen(\theta) &amp; cos(\theta) \end{array}\right) = (a^k_i, a^k_j)\hat(U_k)\)</span></li>
+<li>El ángulo se elige:
+<ul>
+<li>0 si <span class="math">\((a^k_i)^T a^k_j = 0\)</span>, ie. no hacemos rotación</li>
+<li><p><span class="math">\(\theta\)</span> en <span class="math">\((-\pi/4, \pi/4)\)</span> tal que <span class="math">\((a^{k+1}_i)^T a^{k+1}_j = 0\)</span>. Para ello calculamos:</p>
+<p><span class="math">\(cos(\theta) = 1/sqrt(1 + t^2)\)</span>, <span class="math">\(sen(\theta) = t \times cos(\theta)\)</span>, donde <span class="math">\(t = signo(\xi)/(|\xi| + sqrt(1 +(?) \xi^2))\)</span> y <span class="math">\(\xi = ((a^k_j)^T a^k_j - (a^k_i)^T a^k_i)/(2*(a^k_i)^T a^k_j)\)</span></p></li>
+</ul></li>
+</ul></li>
+</ul>
+<p><em>Observaciones:</em></p>
+<ul>
+<li>Para la implementación, usar <span class="math">\(((a^k_i)^T a^k_j) / (\|a^k_i\| \|a^k_j\|) &lt; tol\)</span> para la condición de ortogonalidad de <span class="math">\((a^k_i)^T a^k_j = 0\)</span>, con <span class="math">\(tol \leq 10^{-8}\)</span>.</li>
+<li>Sin <span class="math">\(1/\xi \leq \epsilon_m\)</span>, entonces <span class="math">\(\theta = 0\)</span>; en otro caso, calculamos <span class="math">\(t,\xi y U^k\)</span> normalmente.</li>
+<li><span class="math">\(\left(\begin{array}{cc} a^{k+1}_i &amp; a^{k+1}_j\\ v^{k+1}_i &amp; v^{k+1}_j \end{array}\right) = \left(\begin{array}{cc} a^k_i &amp; a^k_j\\ v^k_i &amp; v^k_j\end{array}\right)  U^k\)</span>, es decir, sólo actualizamos lo afectado en cada paso.</li>
+<li>Usar un contador <span class="math">\(rot\)</span> que se incrementa cuando una pareja de columnas sean ortogonales. El algoritmo termina si <span class="math">\(rot = n(n-1)/2\)</span></li>
+<li>En los algoritmos tradicionales de Jacobi one-sided las rotaciones se realizan en una secuencia <strong>fija</strong> llamada &quot;sweep&quot;. Cada sweep consiste en <span class="math">\(n(n-1)/2\)</span> rotaciones y en cada sweep se ortogonalizan 2 columnas. El algoritmo termina si en un sweep todas las columnas son ortogonales.</li>
+</ul>
+<h2 id="clase-3">Clase 3</h2>
+<p><strong>Ordenamiento cíclico por renglones</strong></p>
+<p>Un <em>sweep</em> incolucra los pares (1,2), ..., (1,n),(2,3), ..., (2,n), ..., (n-1,n). Hay <span class="math">\(\binom nk = n(n-1)/2\)</span> pares. Una desventaja es que el algoritmo de Jacobi con este ordenamiento es secuencial, pero una ventaja es que siempre converge si <span class="math">\(-\pi/4 \leq \theta \leq \pi/4\)</span> y además la convergencia es cuadrática.</p>
+<p><strong>Ordenamiento <em>round-robin</em></strong></p>
+<p>+) Permite ejecición de Jacobi en paralelo. +) Genera <span class="math">\(n(n-1)/2\)</span> pares de columnas en <span class="math">\(n-1\)</span> pasos con <span class="math">\(n/2\)</span> procesadores. Si <span class="math">\(n\)</span> es impar, se agrega una columna de ceros.</p>
+<p><em>Ejemplo:</em> <span class="math">\(n = 8, p = 4\)</span></p>
+<ol style="list-style-type: decimal">
+<li>$
+</li>
+<li>$
+</li>
+<li>etc.</li>
+</ol>
+<p><em>Ventajas:</em></p>
+<ul>
+<li>En paralelo</li>
+</ul>
+<p><em>Desventajas</em>:</p>
+<ul>
+<li>Convergencia?</li>
+<li>Se extiende?</li>
+</ul>
