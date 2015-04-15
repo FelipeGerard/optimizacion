@@ -91,7 +91,7 @@ void main(int argc, char *argv[]){
 	printf("A = \n");
 	impMat(dim1,dim2,a);
 	printf("B = \n");
-	impMat(dim1,dim2,b);
+	impMat(dim2,dim3,b);
     }
 
     adist=malloc(sizeof(double)*(dim1*dim2)/np);
