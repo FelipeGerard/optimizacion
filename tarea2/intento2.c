@@ -114,8 +114,8 @@ void main(int argc, char *argv[]){
 	printMat(dim1,dim2,b);
     }
 
-    adist=malloc(sizeof(double)*(dim1*dim2)/np);
-    bdist=malloc(sizeof(double)*(dim2*dim3)/np);
+    adist=malloc(sizeof(double)*(dim1/np)*dim2);
+    bdist=malloc(sizeof(double)*(dim2/np)*dim3);
 
 
     MPI_Scatter(a,(dim1*dim2)/np,MPI_DOUBLE,adist,(dim1*dim2)/np,MPI_DOUBLE,0,MPI_COMM_WORLD);
