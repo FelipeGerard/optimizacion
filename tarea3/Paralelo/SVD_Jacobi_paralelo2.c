@@ -41,54 +41,7 @@ void *matrizPrueba(int dimren,int dimcol,double *mat){
     mat[15] = 15;
 }
 
-void rotatePossession(int id, int np, int m, double *A_i, double *A_j, double *aux1, double *aux2, int verbose){
-    if(verbose >= 1) printf("\nRotating possessions...\n");
-    // Mandamos y recibimos Aj
-    if(id == 0){
-	if(verbose == 2) printf("\nSending Aj: %d --> %d", 0, 1); 
-	MPI_Send(A_j, m, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
-	if(verbose == 2) printf("\nSuccess!\n");
-    }else{
-	if(verbose == 2) printf("\nSending Aj: %d --> %d", id, id-1); 
-	MPI_Send(A_j, m, MPI_DOUBLE, id-1, 0, MPI_COMM_WORLD);
-	if(verbose == 2) printf("\nSuccess!\n");
-    }
-    if(id == 1){
-	if(verbose == 2) printf("\nReceiving Aj: %d --> %d", 0, 1); 
-	MPI_Recv(aux1, m, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	if(verbose == 2) printf("\nSuccess!\n");
-	//impMat(m,1,A_j);
-	//impMat(m,1,aux1);
-    }else if(id < np-1){
-	if(verbose == 2) printf("\nReceiving Aj: %d --> %d", id+1, id); 
-	MPI_Recv(aux2, m, MPI_DOUBLE, id+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	if(verbose == 2) printf("\nSuccess!\n");
-    }
-    // Esperamos a que se completen estas transferencias
-    MPI_Barrier(MPI_COMM_WORLD);
-    if(verbose == 2)    printf("\nCPU %d is through the first comm round...\n", id); 
 
-    // Mandamos y recibimos Ai
-    if(id == np-1){
-	if(verbose == 2) printf("\nSending Ai: %d --> %d", np-1, np-1); 
-	aux2 = A_i;
-	if(verbose == 2) printf("\nReceiving Aj: %d --> %d", np-1, np-1); 
-    }else if(id > 0){
-	if(verbose == 2) printf("\nSending Ai: %d --> %d", id, id+1); 
-	MPI_Send(A_i, m, MPI_DOUBLE, id+1, 0, MPI_COMM_WORLD);
-    } 
-    if(id > 1){
-	if(verbose == 2) printf("\nReceiving Ai: %d --> %d", id-1, id); 
-	MPI_Recv(aux1, m, MPI_DOUBLE, id-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-
-    // Asignamos Ai y Aj
-    A_i = aux1;
-    A_j = aux2;
-
-    // Esperamos a que se completen todas las transferencias
-    MPI_Barrier(MPI_COMM_WORLD);
-}
 void main(int argc,char **argv){
     int id,np,m,n; //dimensiones de la matriz a calcular su SVD
     double *Amat,*At,*V;
@@ -103,8 +56,6 @@ void main(int argc,char **argv){
     double precision;
     double prod,A_i_norma,A_j_norma,num,den,machineEps;
 
-    int cha;
-    cha = id;
     m = atoi(argv[1]);
     n = atoi(argv[2]);
     machineEps = 1.e-16;
@@ -113,7 +64,7 @@ void main(int argc,char **argv){
     col_ort = n*(n-1)/2;
     precision = 1.e-8;
     sweeps = 0;
-    maxsweeps = 0;
+    maxsweeps = 2;
 
 
     MPI_Init(&argc,&argv);
@@ -160,9 +111,7 @@ void main(int argc,char **argv){
     transp(n/np,n,Vdist,Vdt);
     A_i = extraeCol(m,n/np,0,Adt);
     A_j = extraeCol(m,n/np,1,Adt);
-    V_i = extraeCol(n,n/np,0,Vdt);
-    V_j = extraeCol(n,n/np,1,Vdt);
-
+    
     printf("\nAdt = \n");
     impMat(m, n/np, Adt);
     printf("\nVdt = \n");
@@ -180,9 +129,8 @@ void main(int argc,char **argv){
 	//if(id == 0) printf("\n-------------- WHILE\n");
 	for(int k = 0; k<2*(np-1); k++){
 	    printf("\n-------------- FOR, sweep = %d, id = %d, k = %d\n", sweeps, id, k);
-	    printf("Ai = ");
 	    impMat(1,m,A_i);
-	    printf("Aj = ");
+	    printf("\n");
 	    impMat(1,m,A_j);
 	    prod = prodPunto(m,A_i,A_j);
 
@@ -203,6 +151,9 @@ void main(int argc,char **argv){
 		senteta = costeta*t;
 		cte = prod/(A_i_norma*A_j_norma);
 		if(fabs(cte)>precision){
+		    double *V_i,*V_j;
+		    V_i = extraeCol(n,n,k,Vdt);
+		    V_j = extraeCol(n,n,j,Vdt);
 		    double *A_ij,*V_ij;
 		    A_ij = constMat(m,2,A_i,A_j);
 		    V_ij = constMat(n,2,V_i,V_j);
@@ -217,21 +168,58 @@ void main(int argc,char **argv){
 		    rot_V = multMat_dgemm(n,2,2,V_ij,rotmatriz);
 		    A_i = extraeCol(m,2,0,rot_A);
 		    A_j = extraeCol(m,2,1,rot_A);
-		    V_i = extraeCol(n,2,0,rot_V);
-		    V_j = extraeCol(n,2,1,rot_V);
 		}
 		else{
 		    no_rot += np;
 		}
-		printf("Ai = ");
-		impMat(1,m,A_i);
-		printf("Aj = ");
-		impMat(1,m,A_j);
 
 	    } //fin else
+	    // Mandamos y recibimos Aj
+	    if(id == 0){
+		printf("\nSending Aj: %d --> %d", 0, 1); 
+		MPI_Send(A_j, m, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
+		printf("\nSuccess!\n");
+	    }else{
+		printf("\nSending Aj: %d --> %d", id, id-1); 
+		MPI_Send(A_j, m, MPI_DOUBLE, id-1, 0, MPI_COMM_WORLD);
+		printf("\nSuccess!\n");
+	    }
+	    if(id == 1){
+		printf("\nReceiving Aj: %d --> %d", 0, 1); 
+		MPI_Recv(aux1, m, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		printf("\nSuccess!\n");
+		//impMat(m,1,A_j);
+		//impMat(m,1,aux1);
+	    }else if(id < np-1){
+		printf("\nReceiving Aj: %d --> %d", id+1, id); 
+		MPI_Recv(aux2, m, MPI_DOUBLE, id+1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		printf("\nSuccess!\n");
+	    }
+	    // Esperamos a que se completen estas transferencias
+	    MPI_Barrier(MPI_COMM_WORLD);
+	    printf("\nCPU %d is through the first comm round...\n", id); 
 
-	    rotatePossession(id, np, m, A_i, A_j, aux1, aux2, 0);
-	    rotatePossession(id, np, n, V_i, V_j, aux1, aux2, 0);
+	    // Mandamos y recibimos Ai
+	    if(id == np-1){
+		printf("\nSending Ai: %d --> %d", np-1, np-1); 
+		aux2 = A_i;
+		printf("\nReceiving Aj: %d --> %d", np-1, np-1); 
+	    }else if(id > 0){
+		printf("\nSending Ai: %d --> %d", id, id+1); 
+		MPI_Send(A_i, m, MPI_DOUBLE, id+1, 0, MPI_COMM_WORLD);
+	    } 
+	    if(id > 1){
+		printf("\nReceiving Ai: %d --> %d", id-1, id); 
+		MPI_Recv(aux1, m, MPI_DOUBLE, id-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	    }
+
+	    // Asignamos Ai y Aj
+	    A_i = aux1;
+	    A_j = aux2;
+
+	    // Esperamos a que se completen todas las transferencias
+	    MPI_Barrier(MPI_COMM_WORLD);
+
 
 	}//fin for
 
@@ -249,6 +237,6 @@ void main(int argc,char **argv){
 
 
     printf("V = \n");
-    // impMat(n,n,V);
+    impMat(n,n,V);
 
 }
