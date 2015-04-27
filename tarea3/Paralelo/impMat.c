@@ -6,10 +6,10 @@ void impMat(int dimren, int dimcol, double *mat){
     for(i=0;i<dimren;i++){
 	for(j=0;j<dimcol;j++){
 	    if((i*dimcol+j)%dimcol<dimcol-1){
-		printf("mat[%d]=%1.16f\t",(i*dimcol+j),mat[i*dimcol+j]);
+		printf("mat[%d]=%1.5f\t",(i*dimcol+j),mat[i*dimcol+j]);
 	    }
 	    else{
-		printf("mat[%d]=%1.16f\t\n",(i*dimcol+j),mat[i*dimcol+j]);
+		printf("mat[%d]=%1.5f\t\n",(i*dimcol+j),mat[i*dimcol+j]);
 	    }
 
 	}

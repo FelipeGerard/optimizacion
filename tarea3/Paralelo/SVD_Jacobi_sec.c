@@ -143,6 +143,6 @@ void main(int argc,char **argv){
 
 
     printf("V = \n");
-    impMat(n,n,V);
+    impMatCSV(n,n,V);
 
 }
