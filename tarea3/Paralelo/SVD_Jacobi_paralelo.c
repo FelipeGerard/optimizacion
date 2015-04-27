@@ -148,6 +148,8 @@ void main(int argc,char **argv){
 	impMat(m,n,Amat);
 	printf("At = \n");
 	impMat(m,n,At);
+	printf("V = \n");
+	impMat(n,n,V);
     }
 
     Adist = malloc(sizeof(double)*m*n/np);
@@ -191,7 +193,7 @@ void main(int argc,char **argv){
 	no_rot = 0;
 
 	//if(id == 0) printf("\n-------------- WHILE\n");
-	for(int k = 0; k<2*(np-1); k++){
+	for(int k = 0; k<=2*(np-1); k++){
 	    //printf("\n-------------- FOR, sweep = %d, id = %d, k = %d\n", sweeps, id, k);
 	    //printf("s: %d, id: %d, k: %d, Ai = ", sweeps, id, k);
 	    //impMat(1,m,A_i);
@@ -276,7 +278,18 @@ void main(int argc,char **argv){
     printf("Número de sweeps:%d\n",sweeps);
 
 
-    printf("V = \n");
-    // impMat(n,n,V);
+    //printf("V = \n");
+    //impMat(n,n,V);
 
+    if(id == 0){
+	free(Amat);
+	free(At);
+	free(V);
+    }
+    free(A_i); free(A_j); free(Adist); free(Adt);
+    free(V_i); free(V_j); free(Vdist); free(Vdt);
+    free(aux1); free(aux2);
+    free(vaux1); free(vaux2);
+
+    MPI_Finalize();
 }
