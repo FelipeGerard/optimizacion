@@ -10,6 +10,7 @@
 #include "constMat.c"
 #include "impMat.c"
 #include "impMatCSV.c"
+#include "impMatTransp.c"
 #include "matrizId.c"
 #include "multMat_dgemm.c"
 #include "signo.c"
@@ -20,6 +21,7 @@ void *transp(int m, int n, double *mat, double *out){
 	    out[j*m + i] = mat[i*n + j];
 	}
     }
+    return NULL;
 }
 
 void *matrizPrueba(int dimren,int dimcol,double *mat){
@@ -39,6 +41,7 @@ void *matrizPrueba(int dimren,int dimcol,double *mat){
     mat[13] = 13;
     mat[14] = 14;
     mat[15] = 15;
+    return NULL;
 }
 
 void rotatePossession(int id, int np, int m, double *A_i, double *A_j, double *aux1, double *aux2, int verbose){
@@ -100,7 +103,7 @@ void rotatePossession(int id, int np, int m, double *A_i, double *A_j, double *a
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void main(int argc,char **argv){
+int main(int argc,char **argv){
     int id,np,m,n; //dimensiones de la matriz a calcular su SVD
     double *Amat,*At,*V;
     int no_rot; //contador de no rotaciones
@@ -124,7 +127,7 @@ void main(int argc,char **argv){
     col_ort = n*(n-1)/2;
     precision = 1.e-8;
     sweeps = 0;
-    maxsweeps = 10;
+    maxsweeps = 20;
 
 
     MPI_Init(&argc,&argv);
@@ -159,7 +162,14 @@ void main(int argc,char **argv){
     // En esta versión np debe ser igual a n/2
     MPI_Scatter(At, m*(n/np), MPI_DOUBLE, Adist, m*(n/np), MPI_DOUBLE, 0, MPI_COMM_WORLD); // n/np = 2 a fuerza
     MPI_Scatter(V, n*(n/np), MPI_DOUBLE, Vdist, n*(n/np), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
+    // Las columnas que tiene el nodo
+    double *coli, *colj, *colauxi, *colauxj;
+    coli = malloc(sizeof(double)*1);
+    colj = malloc(sizeof(double)*1);
+    colauxi = malloc(sizeof(double)*1);
+    colauxj = malloc(sizeof(double)*1);
+    coli[0] = 2.0*id;
+    colj[0] = 2.0*id + 1.0;
 
     double costeta,senteta;
     double ji,t;
@@ -194,6 +204,7 @@ void main(int argc,char **argv){
 
 	//if(id == 0) printf("\n-------------- WHILE\n");
 	for(int k = 0; k<=2*(np-1); k++){
+
 	    //printf("\n-------------- FOR, sweep = %d, id = %d, k = %d\n", sweeps, id, k);
 	    //printf("s: %d, id: %d, k: %d, Ai = ", sweeps, id, k);
 	    //impMat(1,m,A_i);
@@ -255,6 +266,13 @@ void main(int argc,char **argv){
 	    rotatePossession(id, np, n, V_i, V_j, vaux1, vaux2, 0);
 	    //if(id == np-1) printf("\ns: %d, k: %d, 2*(np-1): %d", sweeps, k, 2*(np-1));
 	    //if(k = 2*(np-1)-1) printf("\nid: %d saliendo del sweep %d", id, sweeps);
+	    rotatePossession(id, np, 1, coli, colj, vaux1, vaux2, 0);
+	    //rotatePosession(id, np, 1, coli, colj, colauxi, colauxj, 0);
+	    /*printf("\nsweep = %d, k = %d, id = %d, coli = \n", sweeps, k, id);
+	    impMat(1,1,coli);
+	    printf("\nsweep = %d, k = %d, id = %d, colj = \n", sweeps, k, id);
+	    impMat(1,1,colj);
+*/
 	}//fin for
 
 
@@ -268,12 +286,36 @@ void main(int argc,char **argv){
     }//fin while
 
     MPI_Barrier(MPI_COMM_WORLD);
+    // Juntamos las columnas de V
+    double *V_ij, *VV;
+    V_ij = malloc(sizeof(double)*2*n);
+    if(id == 0){
+	VV = malloc(sizeof(double)*n*n);
+    }
+    for(i = 0; i < n; i++){
+	V_ij[i] = V_i[i];
+    }
+    for(i = 0; i < n; i++){
+	V_ij[n + i] = V_j[i];
+    }
+    MPI_Gather(V_ij, 2*n, MPI_DOUBLE, VV, 2*n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    printf("\nid: %d, Vi = ", id);
-    impMatCSV(1,m,V_i);
-    printf("\nid: %d, Vj = ", id);
-    impMatCSV(1,m,V_j);
-
+    /*
+    printf("\nid = %d, coli = \n", id);
+    impMat(1,1,coli);
+    printf("\nid = %d, colj = \n", id);
+    impMat(1,1,colj);
+    */
+    if(id == 0) {
+	printf("\nV = \n");
+	impMatTransp(n,n,VV);
+    }
+    /*
+       printf("\nid: %d, col = %1.0f, Vi = ", id, coli[0]);
+       impMatCSV(1,m,V_i);
+       printf("\nid: %d, col = %1.0f, Vj = ", id, colj[0]);
+       impMatCSV(1,m,V_j);
+     */
     printf("\nNúmero de rotaciones:%d\n",no_rot);
     printf("Número de sweeps:%d\n",sweeps);
 
@@ -290,6 +332,8 @@ void main(int argc,char **argv){
     free(V_i); free(V_j); free(Vdist); free(Vdt);
     free(aux1); free(aux2);
     free(vaux1); free(vaux2);
+    //free(colauxi); free(colauxj);
 
     MPI_Finalize();
+    return 0;
 }

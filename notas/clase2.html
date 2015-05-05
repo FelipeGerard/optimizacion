@@ -55,7 +55,7 @@
 </ul>
 <h2 id="clase-3">Clase 3</h2>
 <p><strong>Ordenamiento cíclico por renglones</strong></p>
-<p>Un <em>sweep</em> incolucra los pares (1,2), ..., (1,n),(2,3), ..., (2,n), ..., (n-1,n). Hay <span class="math">\(\binom nk = n(n-1)/2\)</span> pares. Una desventaja es que el algoritmo de Jacobi con este ordenamiento es secuencial, pero una ventaja es que siempre converge si <span class="math">\(-\pi/4 \leq \theta \leq \pi/4\)</span> y además la convergencia es cuadrática.</p>
+<p>Un <em>sweep</em> incolucra los pares <span class="math">\((1,2), ..., (1,n),(2,3), ..., (2,n), ..., (n-1,n)\)</span>. Hay <span class="math">\(\binom nk = n(n-1)/2\)</span> pares. Una desventaja es que el algoritmo de Jacobi con este ordenamiento es secuencial, pero una ventaja es que siempre converge si <span class="math">\(-\pi/4 \leq \theta \leq \pi/4\)</span> y además la convergencia es cuadrática.</p>
 <p><strong>Ordenamiento <em>round-robin</em></strong></p>
 <p>+) Permite ejecición de Jacobi en paralelo. +) Genera <span class="math">\(n(n-1)/2\)</span> pares de columnas en <span class="math">\(n-1\)</span> pasos con <span class="math">\(n/2\)</span> procesadores. Si <span class="math">\(n\)</span> es impar, se agrega una columna de ceros.</p>
 <p><em>Ejemplo:</em> <span class="math">\(n = 8, p = 4\)</span></p>

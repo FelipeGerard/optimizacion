@@ -8,5 +8,5 @@ void *asignaCol(int dimren,int dimcol,int col, double *columna,double *mat){
 	    }
 	}
     }
-
+    return NULL;
 }
