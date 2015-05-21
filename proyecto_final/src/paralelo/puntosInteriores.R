@@ -5,6 +5,8 @@ puntosInteriores <- function(m,n,Amod,Ax,Ay,e,b,C,tol,sigma,x,y,s,v,
   tau <- 0.9995
   itot <- 1e5
 
+  cat(sprintf('   i    |F|       |rcx1|        |rb|          |f3|        |f4|          obj          mu        alfa       cond\n'))
+  cat(sprintf('-----------------------------------------------------------------------------------------------------------------\n'))
   #Asignación de variables en método de PI
   X <- .sparseDiagonal(length(x),x)
   UmenosX <- .sparseDiagonal(m,C*e)-X

@@ -35,7 +35,6 @@ lambda <- rBind(y,1);
 Amod <- Matrix(cBind(Ay,Ax),sparse = T)
 mu <- as.numeric((t(x)%*%s+t(C*e-x)%*%v)/(2*m));
 
-cat(sprintf('   i    |F|       |rcx1|        |rb|          |f3|        |f4|          obj          mu        alfa       cond\n'))
 
 #Puntos interiores:
 #Si se desea secuencial escribir FALSE, si se desea paralelo escribir TRUE
@@ -96,3 +95,4 @@ y_prueba <- Matrix(0,mprueba,1)
 print('En prueba')
 print(mean(b_prueba != y_prueba))
    
+
