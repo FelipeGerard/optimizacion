@@ -64,7 +64,7 @@ SolSistParalelo=function(n,m,H1,H2,Amod,rc,rb,iter,cluster,p=-1){
   # Calcula dlambda = H_inv * (rb - suma) = (L * D * Lt)_inv * (rb - suma). Todo en el master
   dlambda <- solve(C,rb - suma1,'LDLt')
   
-  # Calcula dzeta = 
+  # Calcula dzeta
   dzeta <- do.call(rBind, clusterApply(cluster, AHpart, function(x) ejecutar.tarea(fun3,c(x, dl=dlambda))))
   
   list(dy = dzeta[1:n], dx = dzeta[(n+1):(n+m)], dlambda = dlambda, cluster=cluster)

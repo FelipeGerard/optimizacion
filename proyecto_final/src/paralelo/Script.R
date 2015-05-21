@@ -5,8 +5,8 @@ options(digits = 16)
 
 #lectura de datos de entrenamiento
 
-Train <- read.csv('src/paralelo/Train.csv', stringsAsFactors = F, header = F)
-Test <- read.csv('src/paralelo/Test.csv',stringsAsFactors = F,header = F)
+Train <- read.csv('data/Train.csv', stringsAsFactors = F, header = F)
+Test <- read.csv('data/Test.csv',stringsAsFactors = F, header = F)
 
 #Asignación de variables de acuerdo a la nomenclatura de Puntos Interiores (2a versión)
 
@@ -38,7 +38,7 @@ mu <- as.numeric((t(x)%*%s+t(C*e-x)%*%v)/(2*m));
 
 #Puntos interiores:
 #Si se desea secuencial escribir FALSE, si se desea paralelo escribir TRUE
-resPI <- puntosInteriores(m,n,Amod,Ax,Ay,e,b,C,1e-6,.1,x,y,s,v,lambda,mu,0,TRUE)
+resPI <- puntosInteriores(m,n,Amod,Ax,Ay,e,b,C,1e-6,.1,x,y,s,v,lambda,mu,0,T)
 nF <- resPI[[1]]
 iter <- resPI[[2]]
 x <- resPI[[3]]
